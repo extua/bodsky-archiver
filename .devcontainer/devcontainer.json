@@ -1,0 +1,10 @@
+{
+	"image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+	"features": {
+		"ghcr.io/devcontainers/features/rust:1": {
+			"version": "latest",
+			"profile": "default",
+			"targets": "x86_64-unknown-uefi"
+		}
+	}
+}
