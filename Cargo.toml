@@ -1,0 +1,12 @@
+[package]
+name = "bodsky-archiver"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Example dependencies for Atrium
+atrium-api = "0.24.8"
+atrium-xrpc-client = "0.5.10"
+clap = { version = "4.5.1", features = ["derive"] }
+futures = "0.3.30"
+tokio = { version = "1.36.0", features = ["macros", "rt-multi-thread"] }
