@@ -8,6 +8,6 @@ async fn main() -> Result<(), reqwest::Error> {
         .json()
         .await?;
 
-    println!("{echo_json:#?}");
+    println!("{}",echo_json["feed"][0]["post"]["record"]["text"]);
     Ok(())
 }
