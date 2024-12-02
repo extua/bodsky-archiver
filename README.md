@@ -1,0 +1,20 @@
+Using the [Bodleian Libraries bluesky account](https://bsky.app/profile/bodleianlibraries.bsky.social) as an example
+
+
+## Resolve handle
+
+```url
+https://public.api.bsky.app/xrpc/com.atproto.identity.resolveHandle?handle=bodleianlibraries.bsky.social
+```
+
+This endpoint returns the ID `did:plc:blxilps4iwbxicionf2rztej`
+
+## Get posts
+
+Using the ID we found above, we can get the posts associated with the account
+
+```url
+https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=did:plc:blxilps4iwbxicionf2rztej
+```
+
+This endpoint returns a bunch of JSON for the posts.
