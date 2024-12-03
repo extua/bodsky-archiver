@@ -23,5 +23,5 @@ This endpoint returns a bunch of JSON for the posts.
 
 Other people have also tried doing this
 
-https://worthdoingbadly.com/bsky/
-https://www.404media.co/someone-made-a-dataset-of-one-million-bluesky-posts-for-machine-learning-research/
+* [Zhuowei Zhang](https://worthdoingbadly.com/bsky/)
+* [Daniel van Strien](https://bsky.app/profile/did:plc:7e5mpxuweopubhexwqg5l3ba/post/3lbu6l4fxdc2e)
