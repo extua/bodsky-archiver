@@ -18,3 +18,10 @@ https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=did:plc:blxil
 ```
 
 This endpoint returns a bunch of JSON for the posts.
+
+### Other attempts
+
+Other people have also tried doing this
+
+https://worthdoingbadly.com/bsky/
+https://www.404media.co/someone-made-a-dataset-of-one-million-bluesky-posts-for-machine-learning-research/
