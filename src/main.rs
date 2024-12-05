@@ -3,7 +3,7 @@ use tungstenite::{
     protocol::{frame::coding::CloseCode, CloseFrame},
     Message,
 };
-// use minicbor::Decode;
+use minicbor::Decoder;
 
 
 fn main() {
@@ -19,12 +19,11 @@ fn main() {
         println!("* {header}");
     }
 
-    for _ in 0..1 {
+    for _ in 0..10 {
         let msg: Message = socket.read().expect("Error reading message");
-        // let msg_txt = msg.to_string();
-        // let output: [&str; 2] = minicbor::decode(msg)?;
-
-        println!("Received: {:?}", output);
+        let msg_txt = msg.into_data();
+        let mut decoder  = Decoder::new(&msg_txt);
+        println!("Received: {:?}", decoder.str());
     }
     let _ = socket.close(Some(CloseFrame {
         code: (CloseCode::Normal),
