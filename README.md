@@ -25,3 +25,4 @@ Other people have also tried doing this
 
 * [Zhuowei Zhang](https://worthdoingbadly.com/bsky/)
 * [Daniel van Strien](https://bsky.app/profile/did:plc:7e5mpxuweopubhexwqg5l3ba/post/3lbu6l4fxdc2e)
+* [Filipo Valsorda](https://bsky.app/profile/filippo.abyssdomain.expert/post/3lcfdsv2hec2a)
