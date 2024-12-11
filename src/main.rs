@@ -1,7 +1,6 @@
 use core::panic;
 use serde::{Deserialize, Serialize};
-
-const ACCOUNT_DID: &str = "did:plc:blxilps4iwbxicionf2rztej";
+mod config;
 
 fn get_posts_number() -> u64 {
     #[derive(Serialize, Deserialize)]
@@ -14,7 +13,7 @@ fn get_posts_number() -> u64 {
     async fn request_profile_from_api() -> Result<Profile, reqwest::Error> {
         let raw_response: Result<Profile, reqwest::Error> = reqwest::Client::new()
             .get("https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile")
-            .query(&[("actor", ACCOUNT_DID)])
+            .query(&[("actor", config::ACCOUNT_DID)])
             .send()
             .await?
             .json::<Profile>()
@@ -22,13 +21,13 @@ fn get_posts_number() -> u64 {
         raw_response
     }
     let response: Profile = match request_profile_from_api() {
-        Ok(file) => file,
+        Ok(response) => response,
         Err(error) => panic!("Failed to get or parse API response: {error:?}"),
     };
     response.posts_count
 }
 
 fn main() {
-    let post_count: u64 = get_posts_number();
-    println!("{}", post_count);
+    let api_loops_needed: u64 = get_posts_number().div_euclid(config::POSTS_PER_REQUEST) + 1;
+    println!("{}", api_loops_needed);
 }
