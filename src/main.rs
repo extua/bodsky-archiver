@@ -11,7 +11,7 @@ fn get_posts_number() -> u64 {
     }
 
     #[tokio::main]
-    async fn request_posts_number() -> Result<Profile, reqwest::Error> {
+    async fn request_profile_from_api() -> Result<Profile, reqwest::Error> {
         let raw_response: Result<Profile, reqwest::Error> = reqwest::Client::new()
             .get("https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile")
             .query(&[("actor", ACCOUNT_DID)])
@@ -21,7 +21,7 @@ fn get_posts_number() -> u64 {
             .await;
         raw_response
     }
-    let response: Profile = match request_posts_number() {
+    let response: Profile = match request_profile_from_api() {
         Ok(file) => file,
         Err(error) => panic!("Failed to get or parse API response: {error:?}"),
     };
@@ -29,6 +29,6 @@ fn get_posts_number() -> u64 {
 }
 
 fn main() {
-    let post_count = get_posts_number();
-    println!("{:?}", post_count);
+    let post_count: u64 = get_posts_number();
+    println!("{}", post_count);
 }
