@@ -28,13 +28,13 @@ fn get_posts_number() -> u64 {
     response.posts_count
 }
 
-fn collect_api_responses() {
+fn collect_api_responses(api_loops_needed: u64) {
     #[tokio::main]
-    async fn request_posts_from_api() -> [Value; config::POSTS_PER_REQUEST] {
+    async fn request_bulk_posts_from_api() -> Vec<Value> {
         #[derive(Serialize, Deserialize, Debug)]
         #[serde(rename_all = "camelCase")]
         pub struct AuthorFeed {
-            feed: [Value; config::POSTS_PER_REQUEST],
+            feed: Vec<Value>,
         }
 
         let posts_per_request_str: String = config::POSTS_PER_REQUEST.to_string();
@@ -54,8 +54,14 @@ fn collect_api_responses() {
             Ok(response) => response,
             Err(error) => panic!("Failed to get or parse API response: {error:?}"),
         };
-        let feed: [Value; config::POSTS_PER_REQUEST] = response.feed;
+        let feed: Vec<Value> = response.feed;
         feed
+    }
+
+    let mut posts = request_bulk_posts_from_api();
+
+    for post in posts.iter_mut() {
+        println!("this is a post {:#?}", post);
     }
 }
 
@@ -63,7 +69,6 @@ fn main() {
     let api_loops_needed: u64 =
         get_posts_number().div_euclid(config::POSTS_PER_REQUEST.try_into().unwrap()) + 1;
     println!("{}", api_loops_needed);
-    let posts = request_posts_from_api();
 
-    println!("uri {:#?}", posts);
+    collect_api_responses(api_loops_needed);
 }
