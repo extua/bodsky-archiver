@@ -61,7 +61,7 @@ fn collect_api_responses(api_loops_needed: u64) {
     let mut posts: Vec<Value> = request_bulk_posts_from_api();
 
     for post in posts.iter_mut() {
-        let at_uri: &str = &post["post"]["uri"].as_str().unwrap();
+        let at_uri: &str = post["post"]["uri"].as_str().unwrap();
         let http_url: String = convert_at_uri_to_url(at_uri);
         println!("this is a post url {:#?}", http_url);
     }
@@ -84,7 +84,7 @@ fn test_convert_at_uri_to_url() {
 
 fn main() {
     let api_loops_needed: u64 =
-        get_posts_number().div_euclid(config::POSTS_PER_REQUEST.try_into().unwrap()) + 1;
+        get_posts_number().div_euclid(config::POSTS_PER_REQUEST) + 1;
     println!("{}", api_loops_needed);
 
     collect_api_responses(api_loops_needed);
