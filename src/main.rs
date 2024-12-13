@@ -58,11 +58,28 @@ fn collect_api_responses(api_loops_needed: u64) {
         feed
     }
 
-    let mut posts = request_bulk_posts_from_api();
+    let mut posts: Vec<Value> = request_bulk_posts_from_api();
 
     for post in posts.iter_mut() {
-        println!("this is a post {:#?}", post);
+        let at_uri: &str = &post["post"]["uri"].as_str().unwrap();
+        let http_url: String = convert_at_uri_to_url(at_uri);
+        println!("this is a post url {:#?}", http_url);
     }
+}
+
+fn convert_at_uri_to_url(at_uri: &str) -> String {
+    let did: &str = &at_uri[5..37];
+    let rkey: &str = &at_uri[57..];
+    let http_url: String = format!("https://bsky.app/profile/{did}/post/{rkey}");
+    http_url
+}
+#[test]
+fn test_convert_at_uri_to_url() {
+    let at_uri: &str = "at://did:plc:blxilps4iwbxicionf2rztej/app.bsky.feed.post/3ld4qc7ixms23";
+    let http_url: &str =
+        "https://bsky.app/profile/did:plc:blxilps4iwbxicionf2rztej/post/3ld4qc7ixms23";
+    let at_uri_converted: String = convert_at_uri_to_url(at_uri);
+    assert_eq!(at_uri_converted, http_url);
 }
 
 fn main() {
