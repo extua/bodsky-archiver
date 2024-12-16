@@ -1,0 +1,3 @@
+/* this is just a comment but a good integration test to do here
+would be to check that the final number of items we receive
+matches the final number of posts */
