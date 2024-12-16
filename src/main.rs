@@ -1,5 +1,6 @@
 use bodsky_archiver::convert_at_uri_to_url;
 use core::panic;
+use std::borrow::Borrow;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 mod config;
@@ -35,31 +36,39 @@ fn collect_api_responses(total_posts: usize) {
     let api_calls_needed: usize = total_posts.div_euclid(config::POSTS_PER_REQUEST) + 1;
     let mut current_call: usize = 1;
     let mut posts_remaining: usize = total_posts;
-    let mut posts_to_request = config::POSTS_PER_REQUEST;
+    let mut posts_to_request: usize = config::POSTS_PER_REQUEST;
+    let mut cursor: String = "".to_string();
     while current_call <= api_calls_needed {
         if posts_remaining < config::POSTS_PER_REQUEST {
             posts_to_request = posts_remaining
         }
-        println!("posts to request {}", posts_to_request);
+        println!("requesting {} posts", posts_to_request);
+        let bulk_posts: AuthorFeed = request_bulk_posts_from_api(posts_to_request, &cursor);
+        cursor = bulk_posts.cursor;
+        println!("{}", &cursor);
+    
+    
         current_call += 1;
         posts_remaining -= posts_to_request;
     }
 
-    #[tokio::main]
-    async fn request_bulk_posts_from_api() -> Vec<Value> {
-        #[derive(Serialize, Deserialize)]
-        #[serde(rename_all = "camelCase")]
-        pub struct AuthorFeed {
-            feed: Vec<Value>,
-        }
+    #[derive(Serialize, Deserialize, Debug)]
+    #[serde(rename_all = "camelCase")]
+    pub struct AuthorFeed {
+        cursor: String,
+        feed: Vec<Value>,
+    }
 
-        let posts_per_request_str: String = config::POSTS_PER_REQUEST.to_string();
+    #[tokio::main]
+    async fn request_bulk_posts_from_api(posts_to_request: usize, cursor: &str) -> AuthorFeed {
+        let posts_per_request_str: String = posts_to_request.to_string();
 
         let raw_response: Result<AuthorFeed, reqwest::Error> = reqwest::Client::new()
             .get("https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed")
             .query(&[
                 ("actor", config::ACCOUNT_DID),
                 ("limit", &posts_per_request_str),
+                ("cursor", &cursor),
             ])
             .send()
             .await
@@ -70,20 +79,20 @@ fn collect_api_responses(total_posts: usize) {
             Ok(response) => response,
             Err(error) => panic!("Failed to get or parse API response: {error:?}"),
         };
-        response.feed
+        response
     }
 
-    fn parse_urls_from_posts() -> Vec<String> {
-        let posts: Vec<Value> = request_bulk_posts_from_api();
-        let mut feed: Vec<String> = Vec::with_capacity(config::POSTS_PER_REQUEST);
-        for post in posts {
-            let at_uri: &str = post["post"]["uri"].as_str().unwrap();
-            let http_url: String = convert_at_uri_to_url(at_uri);
-            println!("this is a post url {:#?}", http_url);
-            feed.push(http_url);
-        }
-        feed
-    }
+    // fn parse_urls_from_posts() -> Vec<String> {
+    //     let posts: Vec<Value> = request_bulk_posts_from_api();
+    //     let mut feed: Vec<String> = Vec::with_capacity(config::POSTS_PER_REQUEST);
+    //     for post in posts {
+    //         let at_uri: &str = post["post"]["uri"].as_str().unwrap();
+    //         let http_url: String = convert_at_uri_to_url(at_uri);
+    //         println!("this is a post url {:#?}", http_url);
+    //         feed.push(http_url);
+    //     }
+    //     feed
+    // }
 }
 
 fn main() {
