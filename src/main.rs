@@ -1,13 +1,14 @@
+use bodsky_archiver::convert_at_uri_to_url;
 use core::panic;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 mod config;
 
-fn get_posts_number() -> u64 {
+fn get_posts_number() -> usize {
     #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct Profile {
-        posts_count: u64,
+        posts_count: usize,
     }
 
     #[tokio::main]
@@ -28,10 +29,25 @@ fn get_posts_number() -> u64 {
     response.posts_count
 }
 
-fn collect_api_responses(api_loops_needed: u64) {
+fn collect_api_responses(total_posts: usize) {
+    // This loop tracks the number of posts remaining and the number
+    // to make in each api call
+    let api_calls_needed: usize = total_posts.div_euclid(config::POSTS_PER_REQUEST) + 1;
+    let mut current_call: usize = 1;
+    let mut posts_remaining: usize = total_posts;
+    let mut posts_to_request = config::POSTS_PER_REQUEST;
+    while current_call <= api_calls_needed {
+        if posts_remaining < config::POSTS_PER_REQUEST {
+            posts_to_request = posts_remaining
+        }
+        println!("posts to request {}", posts_to_request);
+        current_call += 1;
+        posts_remaining -= posts_to_request;
+    }
+
     #[tokio::main]
     async fn request_bulk_posts_from_api() -> Vec<Value> {
-        #[derive(Serialize, Deserialize, Debug)]
+        #[derive(Serialize, Deserialize)]
         #[serde(rename_all = "camelCase")]
         pub struct AuthorFeed {
             feed: Vec<Value>,
@@ -54,38 +70,24 @@ fn collect_api_responses(api_loops_needed: u64) {
             Ok(response) => response,
             Err(error) => panic!("Failed to get or parse API response: {error:?}"),
         };
-        let feed: Vec<Value> = response.feed;
+        response.feed
+    }
+
+    fn parse_urls_from_posts() -> Vec<String> {
+        let posts: Vec<Value> = request_bulk_posts_from_api();
+        let mut feed: Vec<String> = Vec::with_capacity(config::POSTS_PER_REQUEST);
+        for post in posts {
+            let at_uri: &str = post["post"]["uri"].as_str().unwrap();
+            let http_url: String = convert_at_uri_to_url(at_uri);
+            println!("this is a post url {:#?}", http_url);
+            feed.push(http_url);
+        }
         feed
     }
-
-    let mut posts: Vec<Value> = request_bulk_posts_from_api();
-
-    for post in posts.iter_mut() {
-        let at_uri: &str = post["post"]["uri"].as_str().unwrap();
-        let http_url: String = convert_at_uri_to_url(at_uri);
-        println!("this is a post url {:#?}", http_url);
-    }
-}
-
-fn convert_at_uri_to_url(at_uri: &str) -> String {
-    let did: &str = &at_uri[5..37];
-    let rkey: &str = &at_uri[57..];
-    let http_url: String = format!("https://bsky.app/profile/{did}/post/{rkey}");
-    http_url
-}
-#[test]
-fn test_convert_at_uri_to_url() {
-    let at_uri: &str = "at://did:plc:blxilps4iwbxicionf2rztej/app.bsky.feed.post/3ld4qc7ixms23";
-    let http_url: &str =
-        "https://bsky.app/profile/did:plc:blxilps4iwbxicionf2rztej/post/3ld4qc7ixms23";
-    let at_uri_converted: String = convert_at_uri_to_url(at_uri);
-    assert_eq!(at_uri_converted, http_url);
 }
 
 fn main() {
-    let api_loops_needed: u64 =
-        get_posts_number().div_euclid(config::POSTS_PER_REQUEST) + 1;
-    println!("{}", api_loops_needed);
+    let total_posts: usize = get_posts_number();
 
-    collect_api_responses(api_loops_needed);
+    collect_api_responses(total_posts);
 }
