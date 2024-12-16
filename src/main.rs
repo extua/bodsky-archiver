@@ -1,8 +1,8 @@
 use bodsky_archiver::convert_at_uri_to_url;
 use core::panic;
-use std::borrow::Borrow;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::fs;
 mod config;
 
 fn get_posts_number() -> usize {
@@ -56,7 +56,7 @@ fn collect_api_responses(total_posts: usize) -> Vec<String> {
         posts_remaining -= posts_to_request;
     }
 
-    #[derive(Serialize, Deserialize, Debug)]
+    #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct AuthorFeed {
         cursor: String,
@@ -72,7 +72,7 @@ fn collect_api_responses(total_posts: usize) -> Vec<String> {
             .query(&[
                 ("actor", config::ACCOUNT_DID),
                 ("limit", &posts_per_request_str),
-                ("cursor", &cursor),
+                ("cursor", cursor),
             ])
             .send()
             .await
@@ -94,4 +94,5 @@ fn main() {
     println!("there are {} posts to request", total_posts);
     let feed_urls = collect_api_responses(total_posts);
     println!("collected {} posts", feed_urls.len());
+    fs::write("urls.txt", feed_urls.join("\n")).expect("unable to write to file");
 }
