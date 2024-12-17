@@ -1,8 +1,10 @@
 use bodsky_archiver::convert_at_uri_to_url;
+use chrono::prelude::*;
 use core::panic;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fs;
+
 mod config;
 
 fn get_posts_number() -> usize {
@@ -86,13 +88,16 @@ fn collect_api_responses(total_posts: usize) -> Vec<String> {
         response
     }
 
-feed
+    feed
 }
 
 fn main() {
     let total_posts: usize = get_posts_number();
     println!("there are {} posts to request", total_posts);
-    let feed_urls = collect_api_responses(total_posts);
+    let feed_urls: Vec<String> = collect_api_responses(total_posts);
     println!("collected {} posts", feed_urls.len());
-    fs::write("urls.txt", feed_urls.join("\n")).expect("unable to write to file");
+    let account_did: &str = config::ACCOUNT_DID;
+    let timestamp: String = Utc::now().timestamp().to_string();
+    let file_path: String = format!("{account_did}-{timestamp}.txt");
+    fs::write(file_path, feed_urls.join("\n")).expect("unable to write to file");
 }
