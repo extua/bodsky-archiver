@@ -1,5 +1,3 @@
-mod config;
-
 pub fn convert_at_uri_to_url(at_uri: &str) -> String {
     let did: &str = &at_uri[5..37];
     let rkey: &str = &at_uri[57..];

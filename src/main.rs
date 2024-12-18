@@ -4,8 +4,8 @@ use core::panic;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fs;
-
-mod config;
+const ACCOUNT_DID: &str = "bodleianlibraries.bsky.social";
+const POSTS_PER_REQUEST: usize = 85;
 
 fn get_posts_number() -> usize {
     #[derive(Serialize, Deserialize)]
@@ -18,7 +18,7 @@ fn get_posts_number() -> usize {
     async fn request_profile_from_api() -> Result<Profile, reqwest::Error> {
         let raw_response: Result<Profile, reqwest::Error> = reqwest::Client::new()
             .get("https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile")
-            .query(&[("actor", config::ACCOUNT_DID)])
+            .query(&[("actor", ACCOUNT_DID)])
             .send()
             .await?
             .json::<Profile>()
@@ -34,7 +34,7 @@ fn get_posts_number() -> usize {
 
 fn collect_api_responses(total_posts: usize) -> Vec<String> {
 
-    let posts_per_api_calls_needed: Vec<usize> = posts_per_api_calls_needed(total_posts, config::POSTS_PER_REQUEST);
+    let posts_per_api_calls_needed: Vec<usize> = posts_per_api_calls_needed(total_posts, POSTS_PER_REQUEST);
     // This loop tracks the number of posts remaining and the number
     // to make in each api call
     let mut cursor: String = "".to_string();
@@ -66,7 +66,7 @@ fn collect_api_responses(total_posts: usize) -> Vec<String> {
         let raw_response: Result<AuthorFeed, reqwest::Error> = reqwest::Client::new()
             .get("https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed")
             .query(&[
-                ("actor", config::ACCOUNT_DID),
+                ("actor", ACCOUNT_DID),
                 ("limit", &posts_per_request_str),
                 ("cursor", cursor),
             ])
@@ -90,7 +90,7 @@ fn main() {
     println!("there are {} posts to request", total_posts);
     let feed_urls: Vec<String> = collect_api_responses(total_posts);
     println!("collected {} posts", feed_urls.len());
-    let account_did: &str = config::ACCOUNT_DID;
+    let account_did: &str = ACCOUNT_DID;
     let timestamp: String = Utc::now().timestamp().to_string();
     let file_path: String = format!("{account_did}-{timestamp}.txt");
     fs::write(file_path, feed_urls.join("\n")).expect("unable to write to file");
