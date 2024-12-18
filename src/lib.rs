@@ -1,4 +1,4 @@
-
+mod config;
 
 pub fn convert_at_uri_to_url(at_uri: &str) -> String {
     let did: &str = &at_uri[5..37];
@@ -7,12 +7,10 @@ pub fn convert_at_uri_to_url(at_uri: &str) -> String {
     http_url
 }
 
-pub fn api_calls_needed() -> Vec<usize> {
-    const TOTAL_POSTS: usize = 29;
-    const DEFAULT_POSTS_PER_REQUEST: usize = 100;
-    let api_calls_necessary: usize = TOTAL_POSTS.div_ceil(DEFAULT_POSTS_PER_REQUEST);
+pub fn posts_per_api_calls_needed(total_posts: usize, posts_per_request: usize) -> Vec<usize> {
+    let api_calls_necessary: usize = total_posts.div_ceil(posts_per_request);
     let mut api_call_vec: Vec<usize> = Vec::with_capacity(api_calls_necessary);
-    let last_request_remaining_posts: usize = TOTAL_POSTS.rem_euclid(DEFAULT_POSTS_PER_REQUEST);
+    let last_request_remaining_posts: usize = total_posts.rem_euclid(posts_per_request);
     // if total_posts is less than default_posts_per_request
     // return total_posts
     // if total_posts divides cleanly into default_posts_per_request
@@ -20,15 +18,15 @@ pub fn api_calls_needed() -> Vec<usize> {
     // if total posts does not divide cleanly into default_posts_per_request
     // add default posts per request as above, then add the remainder
     // at the end
-    if DEFAULT_POSTS_PER_REQUEST >= TOTAL_POSTS {
-        api_call_vec.push(TOTAL_POSTS);
+    if posts_per_request >= total_posts {
+        api_call_vec.push(total_posts);
     } else if last_request_remaining_posts == 0 {
         for _ in 0..api_calls_necessary {
-                    api_call_vec.push(DEFAULT_POSTS_PER_REQUEST)
+                    api_call_vec.push(posts_per_request)
         }
     } else {
         for _ in 0..(api_calls_necessary -1) {
-            api_call_vec.push(DEFAULT_POSTS_PER_REQUEST)
+            api_call_vec.push(posts_per_request)
         }
         api_call_vec.push(last_request_remaining_posts)
     }
