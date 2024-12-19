@@ -20,17 +20,16 @@ pub fn posts_per_api_calls_needed(total_posts: usize, posts_per_request: usize) 
         api_call_vec.push(total_posts);
     } else if last_request_remaining_posts == 0 {
         for _ in 0..api_calls_necessary {
-                    api_call_vec.push(posts_per_request)
+            api_call_vec.push(posts_per_request)
         }
     } else {
-        for _ in 0..(api_calls_necessary -1) {
+        for _ in 0..(api_calls_necessary - 1) {
             api_call_vec.push(posts_per_request)
         }
         api_call_vec.push(last_request_remaining_posts)
     }
     api_call_vec
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -47,13 +46,13 @@ mod tests {
 
     #[test]
     fn test_posts_per_api_calls_needed() {
-        let total_posts: usize = 302;
-        for posts_per_request in 1..100 {
-            let api_call_vec: Vec<usize> = posts_per_api_calls_needed(total_posts, posts_per_request);
-            let total_posts_from_function: usize = api_call_vec.iter().sum();
-            assert_eq!(total_posts, total_posts_from_function);
-
+        for total_posts in 0..400 {
+            for posts_per_request in 1..100 {
+                let api_call_vec: Vec<usize> =
+                    posts_per_api_calls_needed(total_posts, posts_per_request);
+                let total_posts_from_function: usize = api_call_vec.iter().sum();
+                assert_eq!(total_posts, total_posts_from_function);
+            }
         }
     }
-    
 }
