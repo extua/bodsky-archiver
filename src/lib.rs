@@ -44,4 +44,16 @@ mod tests {
         let at_uri_converted: String = convert_at_uri_to_url(at_uri);
         assert_eq!(at_uri_converted, http_url);
     }
+
+    #[test]
+    fn test_posts_per_api_calls_needed() {
+        let total_posts: usize = 302;
+        for posts_per_request in 1..100 {
+            let api_call_vec: Vec<usize> = posts_per_api_calls_needed(total_posts, posts_per_request);
+            let total_posts_from_function: usize = api_call_vec.iter().sum();
+            assert_eq!(total_posts, total_posts_from_function);
+
+        }
+    }
+    
 }
