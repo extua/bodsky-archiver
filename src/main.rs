@@ -7,7 +7,12 @@ use std::fs;
 const ACCOUNT_DID: &str = "bodleianlibraries.bsky.social";
 const POSTS_PER_REQUEST: usize = 85;
 
+
 fn get_posts_number() -> usize {
+    // This function gets the number of posts
+    // posted by a given account 'did', from
+    // an actor.getProfile api call
+
     #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct Profile {
@@ -33,8 +38,8 @@ fn get_posts_number() -> usize {
 }
 
 fn collect_api_responses(total_posts: usize) -> Vec<String> {
-
-    let posts_per_api_calls_needed: Vec<usize> = posts_per_api_calls_needed(total_posts, POSTS_PER_REQUEST);
+    let posts_per_api_calls_needed: Vec<usize> =
+        posts_per_api_calls_needed(total_posts, POSTS_PER_REQUEST);
     // This loop tracks the number of posts remaining and the number
     // to make in each api call
     let mut cursor: String = "".to_string();
@@ -90,6 +95,7 @@ fn main() {
     println!("there are {} posts to request", total_posts);
     let feed_urls: Vec<String> = collect_api_responses(total_posts);
     println!("collected {} posts", feed_urls.len());
+    // Now write everything out to a file
     let account_did: &str = ACCOUNT_DID;
     let timestamp: String = Utc::now().timestamp().to_string();
     let file_path: String = format!("{account_did}-{timestamp}.txt");
