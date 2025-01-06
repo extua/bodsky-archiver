@@ -7,7 +7,6 @@ use std::fs;
 const ACCOUNT_DID: &str = "bodleianlibraries.bsky.social";
 const POSTS_PER_REQUEST: usize = 85;
 
-
 fn get_posts_number() -> usize {
     // This function gets the number of posts
     // posted by a given account 'did', from
@@ -37,7 +36,7 @@ fn get_posts_number() -> usize {
     response.posts_count
 }
 
-fn collect_api_responses(total_posts: usize) -> Vec<String> {
+fn collect_api_responses(crawl_datetime: DateTime<FixedOffset>, total_posts: usize) -> Vec<String> {
     let posts_per_api_calls_needed: Vec<usize> =
         posts_per_api_calls_needed(total_posts, POSTS_PER_REQUEST);
     // This loop tracks the number of posts remaining and the number
@@ -45,14 +44,27 @@ fn collect_api_responses(total_posts: usize) -> Vec<String> {
     let mut cursor: String = "".to_string();
     let mut feed: Vec<String> = Vec::with_capacity(total_posts);
 
-    for posts_to_request in posts_per_api_calls_needed {
+    'outer: for posts_to_request in posts_per_api_calls_needed {
         println!("requesting {posts_to_request} posts");
         let bulk_posts: AuthorFeed = request_bulk_posts_from_api(posts_to_request, &cursor);
         // update the cursor value
         cursor = bulk_posts.cursor;
+
+        let cursor_rfc3399: DateTime<FixedOffset> = DateTime::parse_from_rfc3339(&cursor).unwrap();
+        println!("cursor is         {}", cursor_rfc3399);
+        println!("crawl datetime is {}", crawl_datetime);
+
+        // At this point, check whether the cursor is greater
+        // than last crawl timestamp, and if so, break here
         for post in bulk_posts.feed {
             let at_uri: &str = post["post"]["uri"].as_str().unwrap();
             let http_url: String = convert_at_uri_to_url(at_uri);
+            let index_timestamp: &str = post["post"]["indexedAt"].as_str().unwrap();
+            let index_timestamp_parsed = DateTime::parse_from_rfc3339(&index_timestamp).unwrap();
+            if index_timestamp_parsed <= crawl_datetime {
+                break 'outer;
+            }
+            println!("post indexed at   {}", index_timestamp_parsed);
             feed.push(http_url);
         }
     }
@@ -91,9 +103,14 @@ fn collect_api_responses(total_posts: usize) -> Vec<String> {
 }
 
 fn main() {
+    let crawl_datetime: DateTime<FixedOffset> = Utc
+        .with_ymd_and_hms(2024, 11, 21, 0, 0, 0)
+        .unwrap()
+        .fixed_offset();
+
     let total_posts: usize = get_posts_number();
     println!("there are {} posts to request", total_posts);
-    let feed_urls: Vec<String> = collect_api_responses(total_posts);
+    let feed_urls: Vec<String> = collect_api_responses(crawl_datetime, total_posts);
     println!("collected {} posts", feed_urls.len());
     // Now write everything out to a file
     let account_did: &str = ACCOUNT_DID;
