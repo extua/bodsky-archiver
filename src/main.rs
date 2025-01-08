@@ -1,5 +1,5 @@
 use bodsky_archiver::*;
-use chrono::prelude::*;
+use chrono::{prelude::*, Months};
 use core::panic;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -47,6 +47,7 @@ fn collect_api_responses(crawl_datetime: DateTime<Utc>, total_posts: usize) -> V
     'outer: for posts_to_request in posts_per_api_calls_needed {
         println!("requesting {posts_to_request} posts");
         let bulk_posts: AuthorFeed = request_bulk_posts_from_api(posts_to_request, &cursor);
+
         // update the cursor value
         cursor = bulk_posts.cursor;
 
@@ -54,17 +55,20 @@ fn collect_api_responses(crawl_datetime: DateTime<Utc>, total_posts: usize) -> V
         println!("cursor is         {}", cursor_rfc3399);
         println!("crawl datetime is {}", crawl_datetime);
 
-        // At this point, check whether the cursor is greater
-        // than last crawl timestamp, and if so, break here
         for post in bulk_posts.feed {
             let at_uri: &str = post["post"]["uri"].as_str().unwrap();
             let http_url: String = convert_at_uri_to_url(at_uri);
             let index_timestamp: &str = post["post"]["indexedAt"].as_str().unwrap();
-            let index_timestamp_parsed: DateTime<Utc> = DateTime::parse_from_rfc3339(index_timestamp).unwrap().to_utc();
+            let index_timestamp_parsed: DateTime<Utc> =
+                DateTime::parse_from_rfc3339(index_timestamp)
+                    .unwrap()
+                    .to_utc();
+            // At this point, check whether the indexed timestamp
+            // is greater than last crawl timestamp, and if so,
+            // break all the way out of the outer loop
             if index_timestamp_parsed <= crawl_datetime {
                 break 'outer;
             }
-            println!("post indexed at   {}", index_timestamp_parsed);
             feed.push(http_url);
         }
     }
@@ -103,7 +107,8 @@ fn collect_api_responses(crawl_datetime: DateTime<Utc>, total_posts: usize) -> V
 }
 
 fn main() {
-    let crawl_datetime: DateTime<Utc> = Utc.with_ymd_and_hms(2024, 11, 21, 0, 0, 0).unwrap();
+    let months_to_go_back: Months = Months::new(5);
+    let crawl_datetime: DateTime<Utc> = Utc::now().checked_sub_months(months_to_go_back).unwrap();
 
     let total_posts: usize = get_posts_number();
     println!("there are {} posts to request", total_posts);
