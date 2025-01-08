@@ -36,7 +36,7 @@ fn get_posts_number() -> usize {
     response.posts_count
 }
 
-fn collect_api_responses(crawl_datetime: DateTime<FixedOffset>, total_posts: usize) -> Vec<String> {
+fn collect_api_responses(crawl_datetime: DateTime<Utc>, total_posts: usize) -> Vec<String> {
     let posts_per_api_calls_needed: Vec<usize> =
         posts_per_api_calls_needed(total_posts, POSTS_PER_REQUEST);
     // This loop tracks the number of posts remaining and the number
@@ -50,7 +50,7 @@ fn collect_api_responses(crawl_datetime: DateTime<FixedOffset>, total_posts: usi
         // update the cursor value
         cursor = bulk_posts.cursor;
 
-        let cursor_rfc3399: DateTime<FixedOffset> = DateTime::parse_from_rfc3339(&cursor).unwrap();
+        let cursor_rfc3399: DateTime<Utc> = DateTime::parse_from_rfc3339(&cursor).unwrap().to_utc();
         println!("cursor is         {}", cursor_rfc3399);
         println!("crawl datetime is {}", crawl_datetime);
 
@@ -103,10 +103,7 @@ fn collect_api_responses(crawl_datetime: DateTime<FixedOffset>, total_posts: usi
 }
 
 fn main() {
-    let crawl_datetime: DateTime<FixedOffset> = Utc
-        .with_ymd_and_hms(2024, 11, 21, 0, 0, 0)
-        .unwrap()
-        .fixed_offset();
+    let crawl_datetime: DateTime<Utc> = Utc.with_ymd_and_hms(2024, 11, 21, 0, 0, 0).unwrap();
 
     let total_posts: usize = get_posts_number();
     println!("there are {} posts to request", total_posts);
