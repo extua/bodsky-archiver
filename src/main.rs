@@ -1,17 +1,26 @@
 use bodsky_archiver::*;
 use chrono::{prelude::*, Months};
 use core::panic;
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fs;
 const ACCOUNT_DID: &str = "bodleianlibraries.bsky.social";
 const POSTS_PER_REQUEST: usize = 85;
 
+pub fn create_bodsky_client() -> Client {
+    const APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
+    let app_client = reqwest::Client::builder()
+        .user_agent(APP_USER_AGENT)
+        .build()
+        .expect("unable to create client");
+    app_client
+}
+
 fn get_posts_number() -> usize {
     // This function gets the number of posts
     // posted by a given account 'did', from
     // an actor.getProfile api call
-
     #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct Profile {
@@ -20,7 +29,8 @@ fn get_posts_number() -> usize {
 
     #[tokio::main]
     async fn request_profile_from_api() -> Result<Profile, reqwest::Error> {
-        let raw_response: Result<Profile, reqwest::Error> = reqwest::Client::new()
+        let app_client = create_bodsky_client();
+        let raw_response: Result<Profile, reqwest::Error> = app_client
             .get("https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile")
             .query(&[("actor", ACCOUNT_DID)])
             .send()
@@ -39,8 +49,8 @@ fn get_posts_number() -> usize {
 fn collect_api_responses(crawl_datetime: DateTime<Utc>, total_posts: usize) -> Vec<String> {
     let posts_per_api_calls_needed: Vec<usize> =
         posts_per_api_calls_needed(total_posts, POSTS_PER_REQUEST);
-    // This loop tracks the number of posts remaining and the number
-    // to make in each api call
+    // This loop tracks the number of posts remaining
+    // and the number to make in each api call
     let mut cursor: String = "".to_string();
     let mut feed: Vec<String> = Vec::with_capacity(total_posts);
 
@@ -84,7 +94,9 @@ fn collect_api_responses(crawl_datetime: DateTime<Utc>, total_posts: usize) -> V
     async fn request_bulk_posts_from_api(posts_to_request: usize, cursor: &str) -> AuthorFeed {
         let posts_per_request_str: String = posts_to_request.to_string();
 
-        let raw_response: Result<AuthorFeed, reqwest::Error> = reqwest::Client::new()
+        let app_client = create_bodsky_client();
+
+        let raw_response: Result<AuthorFeed, reqwest::Error> = app_client
             .get("https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed")
             .query(&[
                 ("actor", ACCOUNT_DID),
@@ -93,12 +105,12 @@ fn collect_api_responses(crawl_datetime: DateTime<Utc>, total_posts: usize) -> V
             ])
             .send()
             .await
-            .unwrap()
+            .expect("Network issue when making HTTP request")
             .json::<AuthorFeed>()
             .await;
         let response: AuthorFeed = match raw_response {
             Ok(response) => response,
-            Err(error) => panic!("Failed to get or parse API response: {error:?}"),
+            Err(error) => panic!("Failed to parse API response: {error:?}"),
         };
         response
     }
