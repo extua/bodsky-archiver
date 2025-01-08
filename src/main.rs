@@ -60,7 +60,7 @@ fn collect_api_responses(crawl_datetime: DateTime<Utc>, total_posts: usize) -> V
             let at_uri: &str = post["post"]["uri"].as_str().unwrap();
             let http_url: String = convert_at_uri_to_url(at_uri);
             let index_timestamp: &str = post["post"]["indexedAt"].as_str().unwrap();
-            let index_timestamp_parsed = DateTime::parse_from_rfc3339(&index_timestamp).unwrap();
+            let index_timestamp_parsed: DateTime<Utc> = DateTime::parse_from_rfc3339(index_timestamp).unwrap().to_utc();
             if index_timestamp_parsed <= crawl_datetime {
                 break 'outer;
             }
