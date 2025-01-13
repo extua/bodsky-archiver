@@ -2,7 +2,7 @@
 name = "bodsky-archiver"
 version = "0.1.0"
 edition = "2021"
-# default-run = "bodsky-archiver"
+default-run = "bodsky-archiver"
 
 [dependencies]
 reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }

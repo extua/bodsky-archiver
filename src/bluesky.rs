@@ -150,7 +150,9 @@ fn collect_api_responses(crawl_datetime: DateTime<Utc>, total_posts: usize) -> V
     feed
 }
 
-fn main() {
+// Everything orchestrated in this function
+// gets exported to main.rs
+pub fn get_bluesky_posts() {
     let months_to_go_back: Months = Months::new(5);
     let crawl_datetime: DateTime<Utc> = Utc::now().checked_sub_months(months_to_go_back).unwrap();
 

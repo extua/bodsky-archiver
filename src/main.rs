@@ -1,5 +1,6 @@
-use bluesky::*;
+use bluesky::get_bluesky_posts;
+mod bluesky;
 
 fn main() {
-    bluesky.main();
+    get_bluesky_posts()
 }
