@@ -1,9 +1,11 @@
 use chrono::{prelude::*, Months};
 use core::panic;
-use reqwest::Client;
+use reqwest::{Client, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fs;
+use std::time::Duration;
+use tokio::time::sleep;
 const ACCOUNT_DID: &str = "bodleianlibraries.bsky.social";
 const POSTS_PER_REQUEST: usize = 85;
 
@@ -53,29 +55,51 @@ fn get_posts_number() -> usize {
     // This function gets the number of posts
     // posted by a given account 'did', from
     // an actor.getProfile api call
+
     #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct Profile {
         posts_count: usize,
     }
-
     #[tokio::main]
-    async fn request_profile_from_api() -> Result<Profile, reqwest::Error> {
-        let app_client = create_bodsky_client();
-        let raw_response: Result<Profile, reqwest::Error> = app_client
-            .get("https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile")
-            .query(&[("actor", ACCOUNT_DID)])
-            .send()
-            .await?
-            .json::<Profile>()
-            .await;
-        raw_response
+    async fn request_profile_from_api(app_client: Client) -> Profile {
+        let mut retries: u8 = 0;
+        let mut backoff: Duration = Duration::from_secs(1);
+
+        let response_from_retry: Result<Response, reqwest::Error> = loop {
+            match app_client
+                .get("https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile")
+                .query(&[("actor", ACCOUNT_DID)])
+                .send()
+                .await
+                // if status is 429, back off and retry
+            {
+                Ok(resp) if resp.status().is_success() => break Ok(resp),
+                Ok(resp) if resp.status() == StatusCode::TOO_MANY_REQUESTS && retries < 6 => {
+                    sleep(backoff).await;
+                    retries += 1;
+                    backoff *= 2;
+                }
+                Err(e) => break Err(e),
+                // This match arm should never be met?
+                _ => panic!("Failed to request profile from API"),
+            }
+        };
+        let response: Response = match response_from_retry {
+            Ok(response) => response,
+            Err(network_error) => panic!("Failed to get API response: {network_error:?}"),
+        };
+        // parse the response into profile struct
+        let parsed_response: Profile = match response.json::<Profile>().await {
+            Ok(response) => response,
+            Err(parse_error) => panic!("Failed to parse API response: {parse_error:?}"),
+        };
+        parsed_response
     }
-    let response: Profile = match request_profile_from_api() {
-        Ok(response) => response,
-        Err(error) => panic!("Failed to get or parse API response: {error:?}"),
-    };
-    response.posts_count
+
+    let app_client: Client = create_bodsky_client();
+    let profile = request_profile_from_api(app_client);
+    profile.posts_count
 }
 
 fn collect_api_responses(crawl_datetime: DateTime<Utc>, total_posts: usize) -> Vec<String> {
