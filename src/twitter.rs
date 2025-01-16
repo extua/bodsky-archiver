@@ -1,9 +1,13 @@
 use reqwest::{header, Client};
 use std::{env, fmt::Error};
 
-fn create_twitter_client() -> Client {
-    const APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
+struct TwitterClient(Client);
+
+impl TwitterClient {
+    fn new() -> Client {
+        const APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
     let mut headers = header::HeaderMap::new();
+    // Todo: proper error handling here
     dotenvy::dotenv().expect("Something wrong with dotenvy");
     let bearer_token: String =
         env::var("TWITTER_API_BEARER_TOKEN").expect("Unable to read the bearer token from .env");
@@ -18,6 +22,10 @@ fn create_twitter_client() -> Client {
         .build()
         .expect("unable to create client");
     app_client
+    }
 }
 
-pub fn get_twitter_posts() {}
+pub fn get_twitter_posts() {
+    let twitter_client: Client = TwitterClient::new();
+
+}
