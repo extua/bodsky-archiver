@@ -44,11 +44,10 @@ fn posts_per_api_calls_needed(total_posts: usize, posts_per_request: usize) -> V
 
 fn create_bodsky_client() -> Client {
     const APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
-    let app_client = reqwest::Client::builder()
+    reqwest::Client::builder()
         .user_agent(APP_USER_AGENT)
         .build()
-        .expect("unable to create client");
-    app_client
+        .expect("unable to create client")
 }
 
 fn get_posts_number() -> usize {
@@ -81,10 +80,12 @@ fn get_posts_number() -> usize {
                     backoff *= 2;
                 }
                 Err(e) => break Err(e),
-                // This match arm should never be met?
+                // Breaking out with an error is fine,
+                // the last match arm should never be met
                 _ => panic!("Failed to request profile from API"),
             }
         };
+        // first error handiing on the response
         let response: Response = match response_from_retry {
             Ok(response) => response,
             Err(network_error) => panic!("Failed to get API response: {network_error:?}"),
