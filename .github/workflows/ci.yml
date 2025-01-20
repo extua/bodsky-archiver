@@ -11,33 +11,27 @@ env:
 
 jobs:
   ci:
-    name: Cargo check
+    name: Check code
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
       - run: rustup update stable && rustup default stable
-
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
-
       - name: Run cargo check
       - run: cargo check
-
       - name: Run cargo clippy
       - run: cargo clippy
-
       - name: Run cargo tests
       - run: cargo test
 
   fmt:
-    name: Rustfmt
+    name: Format code
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - run: rustup update stable && rustup default stable
-
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v2
-
+      - name: Run cargo format
       - run: cargo fmt --all -- --check
