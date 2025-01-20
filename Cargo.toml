@@ -6,13 +6,18 @@ rust-version = "1.84"
 default-run = "bodsky-archiver"
 
 [dependencies]
-reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+reqwest = { version = "0.12", features = [
+    "json",
+    "rustls-tls",
+], default-features = false }
 tokio = { version = "1", features = ["full"] }
 serde_json = "1.0"
 serde = { version = "1.0.215", features = ["derive"] }
 chrono = "0.4"
 # Arium dependencies for the AT Protocol
 atrium-api = { version = "0.24", features = ["agent"] }
-atrium-xrpc-client = { version = "0.5", default-features = false, features = ["reqwest"] }
+atrium-xrpc-client = { version = "0.5", default-features = false, features = [
+    "reqwest",
+] }
 dotenvy = "0.15"
 anyhow = "1.0.95"

@@ -1,13 +1,13 @@
+use anyhow::Result;
 use reqwest::{header, Client};
 use std::env;
-use anyhow::Result;
 
 struct TwitterClient(Client);
 
 #[derive(Debug)]
 pub enum TwitterClientError {
     ReadEnvFile(dotenvy::Error),
-    General(String)
+    General(String),
 }
 
 impl std::fmt::Display for TwitterClientError {
@@ -22,7 +22,7 @@ impl std::error::Error for TwitterClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             TwitterClientError::ReadEnvFile(e) => Some(e),
-            TwitterClientError::General(_) => None
+            TwitterClientError::General(_) => None,
         }
     }
 }
