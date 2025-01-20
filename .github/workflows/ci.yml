@@ -16,13 +16,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: rustup update stable && rustup default stable
-      - name: Cache dependencies
-        uses: Swatinem/rust-cache@v2
-      - name: Run cargo check
+        name: Cache dependencies
+      - uses: Swatinem/rust-cache@v2
+        name: Run cargo check
       - run: cargo check
-      - name: Run cargo clippy
+        name: Run cargo clippy
       - run: cargo clippy
-      - name: Run cargo tests
+        name: Run cargo tests
       - run: cargo test
 
   fmt:
@@ -31,7 +31,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: rustup update stable && rustup default stable
-      - name: Cache Dependencies
-        uses: Swatinem/rust-cache@v2
-      - name: Run cargo format
+        name: Cache Dependencies
+      - uses: Swatinem/rust-cache@v2
+        name: Run cargo format
       - run: cargo fmt --all -- --check
