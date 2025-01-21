@@ -48,6 +48,7 @@ impl TwitterClient {
         let app_client = reqwest::Client::builder()
             .user_agent(APP_USER_AGENT)
             .default_headers(headers)
+            .gzip(true)
             .build()?;
         Ok(app_client)
     }

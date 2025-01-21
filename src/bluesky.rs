@@ -46,6 +46,7 @@ fn create_bodsky_client() -> Client {
     const APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
     reqwest::Client::builder()
         .user_agent(APP_USER_AGENT)
+        .gzip(true)
         .build()
         .expect("unable to create client")
 }
