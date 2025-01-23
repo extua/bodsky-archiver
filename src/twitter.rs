@@ -4,35 +4,6 @@ use std::env;
 
 struct TwitterClient(Client);
 
-#[derive(Debug)]
-pub enum TwitterClientError {
-    ReadEnvFile(dotenvy::Error),
-    General(String),
-}
-
-impl std::fmt::Display for TwitterClientError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            TwitterClientError::ReadEnvFile(e) => write!(f, "Failure to read env file: {}", e),
-            TwitterClientError::General(s) => write!(f, "General error: {}", s),
-        }
-    }
-}
-impl std::error::Error for TwitterClientError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            TwitterClientError::ReadEnvFile(e) => Some(e),
-            TwitterClientError::General(_) => None,
-        }
-    }
-}
-
-impl From<dotenvy::Error> for TwitterClientError {
-    fn from(cause: dotenvy::Error) -> TwitterClientError {
-        TwitterClientError::ReadEnvFile(cause)
-    }
-}
-
 impl TwitterClient {
     fn new() -> Result<Client> {
         const APP_USER_AGENT: &str =
