@@ -1,6 +1,6 @@
 use chrono::{prelude::*, Months};
-use core::panic;
 use reqwest::header::{HeaderMap, HeaderValue, RETRY_AFTER};
+use core::panic;
 use reqwest::{Client, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -103,7 +103,7 @@ fn get_posts_number() -> usize {
                 _ => panic!("Failed to request profile from API"),
             }
         };
-        // first error handiing on the response
+        // first error handling on the response
         let response: Response = match response_from_retry {
             Ok(response) => response,
             Err(network_error) => panic!("Failed to get API response: {network_error:?}"),
