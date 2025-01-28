@@ -48,7 +48,7 @@ fn collect_api_responses() -> Vec<String> {
         let response_from_retry: Result<Response, reqwest::Error> = loop {
             match app_client
                 .get("https://api.x.com/2/tweets/search/recent")
-                .query(&[("query", "Oxford"), ("max_results", "10"), ("tweet.fields", "created_at,id,text")])
+                .query(&[("query", "Oxford"), ("max_results", "10"), ("tweet.fields", "created_at,id,note_tweet")])
                 .send()
                 .await
                 // if status is 429, back off and retry
@@ -89,7 +89,7 @@ fn collect_api_responses() -> Vec<String> {
 
     for post in bulk_posts.data {
         let id: &str = post["id"].as_str().unwrap();
-        let text: &str = post["text"].as_str().unwrap();
+        let text: &str = post["note_tweet"]["text"].as_str().unwrap();
         let created_at = post["created_at"].as_str().unwrap();
         let formatted_post = format!("tweet with {id} posted at {created_at}\n{text}");
         println!("{formatted_post}");
