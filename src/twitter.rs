@@ -1,6 +1,6 @@
 use anyhow::Result;
 use chrono::{DateTime, Utc};
-use reqwest::{header, Client, Response, StatusCode};
+use reqwest::{header::{self, RETRY_AFTER}, Client, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{env, time::Duration};
@@ -55,6 +55,22 @@ fn collect_api_responses() -> Vec<String> {
             {
                 Ok(resp) if resp.status().is_success() => break Ok(resp),
                 Ok(resp) if resp.status() == StatusCode::TOO_MANY_REQUESTS && retries < 6 => {
+                    sleep(backoff).await;
+                    retries += 1;
+                    backoff *= 2;
+                }
+                // get the retry-after header value, convert it
+                // to seconds, then to duration, etc.
+                Ok(resp) if resp.headers().contains_key("retry-after") && retries < 6 => {
+                    if let Some(retry_after) = resp.headers().get(RETRY_AFTER) {
+                        if let Ok(retry_after) = retry_after.to_str() {
+                            if let Ok(retry_after) = retry_after.parse::<u64>() {
+                                if retry_after < 128 {
+                                    backoff = Duration::from_secs(retry_after + 1);
+                                }
+                            }
+                        }
+                    }
                     sleep(backoff).await;
                     retries += 1;
                     backoff *= 2;

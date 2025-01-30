@@ -6,6 +6,6 @@ mod bluesky;
 mod twitter;
 
 fn main() {
-    // get_bluesky_posts()
-    get_twitter_posts();
+    get_bluesky_posts();
+    // get_twitter_posts();
 }
