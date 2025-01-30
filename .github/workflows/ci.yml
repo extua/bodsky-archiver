@@ -15,7 +15,7 @@ env:
 
 jobs:
   ci:
-    runs-on: ubuntu-latest-arm64
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout directory
         uses: actions/checkout@v4
