@@ -1,33 +1,36 @@
 name: Continuous integration
 
 on:
+  pull_request:
   push:
     branches: main
-    paths:
-      - '**.rs'
 
 env: 
   CARGO_TERM_COLOR: always
+  # Disable incremental compilation for faster from-scratch builds
+  CARGO_INCREMENTAL: 0
+  # Remove debug info, which increases the size of target directory
+  CARGO_PROFILE_TEST_DEBUG: 0
+
 
 jobs:
   ci:
-    name: Check code
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-arm64
     steps:
       - name: Checkout directory
         uses: actions/checkout@v4
+      
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
         
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
 
-      - name: Setup Rust
-        run: rustup update stable && rustup default stable
-
-      - name: Run cargo check
+      - name: Cargo check
         run: cargo check --locked
 
-      - name: Run cargo clippy
+      - name: Cargo clippy
         run: cargo clippy --locked
       
-      - name: Run cargo tests
+      - name: Run tests
         run: cargo test --locked
