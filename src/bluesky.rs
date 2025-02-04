@@ -132,7 +132,7 @@ fn collect_api_responses(crawl_datetime: DateTime<Utc>, total_posts: usize, app_
 
     'outer: for posts_to_request in posts_per_api_calls_needed {
         println!("requesting {posts_to_request} posts");
-        let bulk_posts: AuthorFeed = request_bulk_posts_from_api(posts_to_request, &cursor, &app_client);
+        let bulk_posts: AuthorFeed = request_bulk_posts_from_api(posts_to_request, &cursor, app_client);
 
         // update the cursor value
         cursor = bulk_posts.cursor;
