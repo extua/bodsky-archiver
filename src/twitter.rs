@@ -1,6 +1,9 @@
 use anyhow::Result;
 use chrono::{DateTime, Utc};
-use reqwest::{header::{self, RETRY_AFTER}, Client, Response, StatusCode};
+use reqwest::{
+    header::{self, RETRY_AFTER},
+    Client, Response, StatusCode, Url,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{env, time::Duration};
@@ -33,7 +36,6 @@ impl TwitterClient {
 }
 
 fn collect_api_responses() -> Vec<String> {
-
     #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct TweetFeed {
@@ -41,14 +43,15 @@ fn collect_api_responses() -> Vec<String> {
     }
 
     #[tokio::main]
-    async fn request_tweets_from_api(app_client: Client) -> TweetFeed {
+    async fn request_tweets_from_api(app_client: Client, endpoint: Url) -> TweetFeed {
         let mut retries: u8 = 0;
         let mut backoff: Duration = Duration::from_secs(1);
 
+        let endpoint_str: &str = endpoint.as_str();
+
         let response_from_retry: Result<Response, reqwest::Error> = loop {
             match app_client
-                .get("https://api.x.com/2/tweets/search/recent")
-                .query(&[("query", "Oxford"), ("max_results", "10"), ("tweet.fields", "created_at,id,note_tweet")])
+                .get(endpoint_str)
                 .send()
                 .await
                 // if status is 429, back off and retry
@@ -99,7 +102,9 @@ fn collect_api_responses() -> Vec<String> {
         Err(error) => panic!("Failed to create Twitter client: {error:?}"),
     };
     println!("{:?}", twitter_client);
-    let bulk_posts = request_tweets_from_api(twitter_client);
+    let endpoint = Url::parse_with_params("https://api.x.com/2/tweets/search/recent",
+                                 &[("query", "Oxford"), ("max_results", "10"), ("tweet.fields", "created_at,id,note_tweet")]).unwrap();
+    let bulk_posts = request_tweets_from_api(twitter_client, endpoint);
 
     let mut feed: Vec<String> = Vec::with_capacity(10);
 
