@@ -1,14 +1,13 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 use chrono::{DateTime, Utc};
 use reqwest::{
     header::{self, RETRY_AFTER},
-    Client, Response, StatusCode, Url,
+    Client, Error, Response, StatusCode, Url,
 };
-use serde::{Deserialize, Serialize};
+use serde::{de::Expected, Deserialize, Serialize};
 use serde_json::Value;
-use std::{env, time::Duration};
+use std::{env, process, time::Duration};
 use tokio::time::sleep;
-
 struct TwitterClient(Client);
 
 impl TwitterClient {
@@ -35,14 +34,16 @@ impl TwitterClient {
     }
 }
 
-#[tokio::main]
-async fn request_tweets_from_api(app_client: Client, endpoint: Url) -> Response {
+async fn request_tweets_from_api(
+    app_client: Client,
+    endpoint: Url,
+) -> Result<String, reqwest::Error> {
     let mut retries: u8 = 0;
     let mut backoff: Duration = Duration::from_secs(1);
 
     let endpoint_str: &str = endpoint.as_str();
 
-    let response_from_retry: Result<Response, reqwest::Error> = loop {
+    let response_from_retry: Result<Response, Error> = loop {
         match app_client
             .get(endpoint_str)
             .send()
@@ -74,18 +75,14 @@ async fn request_tweets_from_api(app_client: Client, endpoint: Url) -> Response 
             Err(e) => break Err(e),
             // Breaking out with an error is fine,
             // the last match arm should never be met
-            _ => panic!("Failed to request profile from API"),
+            _ => panic!("Network request failed"),
         }
     };
-    // first error handiing on the response
-    let response: Response = match response_from_retry {
-        Ok(response) => response,
-        Err(network_error) => panic!("Failed to get API response: {network_error:?}"),
-    };
-    response
+
+    response_from_retry?.text().await
 }
 
-async fn collect_api_responses() -> Vec<String> {
+async fn collect_api_responses() -> Result<Vec<String>> {
     #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct TweetFeed {
@@ -97,13 +94,19 @@ async fn collect_api_responses() -> Vec<String> {
         Err(error) => panic!("Failed to create Twitter client: {error:?}"),
     };
     println!("{:?}", twitter_client);
-    let endpoint = Url::parse_with_params("https://api.x.com/2/tweets/search/recent",
-                                 &[("query", "Oxford"), ("max_results", "10"), ("tweet.fields", "created_at,id,note_tweet")]).unwrap();
-    let response = request_tweets_from_api(twitter_client, endpoint);
+    let endpoint = Url::parse_with_params(
+        "https://api.x.com/2/tweets/search/recent",
+        &[
+            ("query", "Oxford"),
+            ("max_results", "10"),
+            ("tweet.fields", "created_at,id,note_tweet"),
+        ],
+    )
+    .unwrap();
+    let response = request_tweets_from_api(twitter_client, endpoint).await?;
 
     // parse the response into tweet struct
-    let bulk_posts: TweetFeed = serde_json::from_str(response.text().await)?;
-
+    let bulk_posts: TweetFeed = serde_json::from_str(&response)?;
 
     let mut feed: Vec<String> = Vec::with_capacity(10);
 
@@ -115,10 +118,17 @@ async fn collect_api_responses() -> Vec<String> {
         println!("{formatted_post}");
         feed.push(formatted_post);
     }
-    feed
+
+    Ok(feed)
 }
 
-pub fn get_twitter_posts() {
-    let response: Vec<String> = collect_api_responses();
+#[tokio::main]
+pub async fn get_twitter_posts() {
+    let response = collect_api_responses().await.unwrap_or_else(|error| {
+        // exit to stderr
+        eprintln!("Failed to collect tweets: {error}");
+        process::exit(1)
+    });
+
     println!("{:?}", response);
 }
