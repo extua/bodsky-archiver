@@ -103,31 +103,28 @@ async fn collect_api_responses() -> Result<Vec<String>> {
         &[
             ("query", "Oxford"),
             ("max_results", "10"),
-            ("tweet.fields", "note_tweet"),
+            ("tweet.fields", "created_at,id,note_tweet"),
         ],
     )
     .unwrap();
 
-    println!("{endpoint:?}");
+    println!("calling this endpoint {endpoint:?}");
 
     let response = request_tweets_from_api(twitter_client, endpoint).await?;
 
-    println!("{response:?}");
+    // println!("{response:?}");
 
     // parse the response into tweet struct
     let bulk_posts: TweetFeed = serde_json::from_str(&response)?;
 
     let mut feed: Vec<String> = Vec::with_capacity(10);
 
-    println!("{feed:?}");
-
-
     for post in bulk_posts.data {
         let id: &str = post["id"].as_str().unwrap();
-        let text: &str = post["note_tweet"]["text"].as_str().unwrap();
+        let text: &str = post["text"].as_str().unwrap();
         let created_at = post["created_at"].as_str().unwrap();
-        let formatted_post = format!("tweet with {id} posted at {created_at}\n{text}");
-        println!("{formatted_post}");
+        let formatted_post = format!("\ntweet with id {id} posted at {created_at}\n{text}\n");
+        print!("{formatted_post}");
         feed.push(formatted_post);
     }
 
