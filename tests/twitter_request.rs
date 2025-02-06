@@ -17,7 +17,8 @@ async fn test_get_twitter_posts() {
 
     // Send an HTTP request to the mock server. This simulates your code.
     let response = reqwest::get(server.url("/translate?word=hello"))
-        .await.unwrap();
+        .await
+        .unwrap();
 
     // Ensure the specified mock was called exactly one time (or fail with a
     // detailed error description).

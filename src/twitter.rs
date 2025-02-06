@@ -34,6 +34,8 @@ impl TwitterClient {
     }
 }
 
+
+// todo, put this into lib.rs and use it for bluesky too
 async fn request_tweets_from_api(
     app_client: Client,
     endpoint: Url,
@@ -52,6 +54,7 @@ async fn request_tweets_from_api(
         {
             Ok(resp) if resp.status().is_success() => break Ok(resp),
             Ok(resp) if resp.status() == StatusCode::TOO_MANY_REQUESTS && retries < 6 => {
+                println!("Got a 429 error, sleeping {backoff:?} seconds");
                 sleep(backoff).await;
                 retries += 1;
                 backoff *= 2;
@@ -68,6 +71,7 @@ async fn request_tweets_from_api(
                         }
                     }
                 }
+                println!("Got a retry-after response, sleeping {backoff:?} seconds");
                 sleep(backoff).await;
                 retries += 1;
                 backoff *= 2;
@@ -99,16 +103,24 @@ async fn collect_api_responses() -> Result<Vec<String>> {
         &[
             ("query", "Oxford"),
             ("max_results", "10"),
-            ("tweet.fields", "created_at,id,note_tweet"),
+            ("tweet.fields", "note_tweet"),
         ],
     )
     .unwrap();
+
+    println!("{endpoint:?}");
+
     let response = request_tweets_from_api(twitter_client, endpoint).await?;
+
+    println!("{response:?}");
 
     // parse the response into tweet struct
     let bulk_posts: TweetFeed = serde_json::from_str(&response)?;
 
     let mut feed: Vec<String> = Vec::with_capacity(10);
+
+    println!("{feed:?}");
+
 
     for post in bulk_posts.data {
         let id: &str = post["id"].as_str().unwrap();
