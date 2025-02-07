@@ -34,7 +34,6 @@ impl TwitterClient {
     }
 }
 
-
 // todo, put this into lib.rs and use it for bluesky too
 async fn request_tweets_from_api(
     app_client: Client,

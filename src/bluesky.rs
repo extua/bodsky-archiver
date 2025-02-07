@@ -1,6 +1,6 @@
 use chrono::{prelude::*, Months};
-use reqwest::header::{HeaderMap, HeaderValue, RETRY_AFTER};
 use core::panic;
+use reqwest::header::{HeaderMap, HeaderValue, RETRY_AFTER};
 use reqwest::{Client, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -51,8 +51,6 @@ fn create_bodsky_client() -> Client {
         .build()
         .expect("unable to create client")
 }
-
-
 
 fn get_posts_number(app_client: Client) -> usize {
     // This function gets the number of posts
@@ -122,7 +120,11 @@ fn get_posts_number(app_client: Client) -> usize {
     profile.posts_count
 }
 
-fn collect_api_responses(crawl_datetime: DateTime<Utc>, total_posts: usize, app_client: &Client) -> Vec<String> {
+fn collect_api_responses(
+    crawl_datetime: DateTime<Utc>,
+    total_posts: usize,
+    app_client: &Client,
+) -> Vec<String> {
     let posts_per_api_calls_needed: Vec<usize> =
         posts_per_api_calls_needed(total_posts, POSTS_PER_REQUEST);
     // This loop tracks the number of posts remaining
@@ -132,7 +134,8 @@ fn collect_api_responses(crawl_datetime: DateTime<Utc>, total_posts: usize, app_
 
     'outer: for posts_to_request in posts_per_api_calls_needed {
         println!("requesting {posts_to_request} posts");
-        let bulk_posts: AuthorFeed = request_bulk_posts_from_api(posts_to_request, &cursor, app_client);
+        let bulk_posts: AuthorFeed =
+            request_bulk_posts_from_api(posts_to_request, &cursor, app_client);
 
         // update the cursor value
         cursor = bulk_posts.cursor;
@@ -167,7 +170,11 @@ fn collect_api_responses(crawl_datetime: DateTime<Utc>, total_posts: usize, app_
     }
 
     #[tokio::main]
-    async fn request_bulk_posts_from_api(posts_to_request: usize, cursor: &str, app_client: &Client) -> AuthorFeed {
+    async fn request_bulk_posts_from_api(
+        posts_to_request: usize,
+        cursor: &str,
+        app_client: &Client,
+    ) -> AuthorFeed {
         let posts_per_request_str: String = posts_to_request.to_string();
 
         let mut retries: u8 = 0;
@@ -224,7 +231,6 @@ fn collect_api_responses(crawl_datetime: DateTime<Utc>, total_posts: usize, app_
             Err(parse_error) => panic!("Failed to parse API response: {parse_error:?}"),
         };
         parsed_response
-
     }
 
     feed
@@ -236,7 +242,6 @@ pub fn get_bluesky_posts() {
     let months_to_go_back: Months = Months::new(5);
     let crawl_datetime: DateTime<Utc> = Utc::now().checked_sub_months(months_to_go_back).unwrap();
     let app_client: Client = create_bodsky_client();
-
 
     let total_posts: usize = get_posts_number(app_client.clone());
     println!("there are {} posts to request", total_posts);
