@@ -7,7 +7,9 @@ use serde::{de::Expected, Deserialize, Serialize};
 use serde_json::Value;
 use std::{env, process};
 
+// local libraries
 use bodsky_archiver::call_api;
+
 struct TwitterClient(Client);
 
 impl TwitterClient {
@@ -34,7 +36,7 @@ impl TwitterClient {
     }
 }
 
-async fn collect_api_responses() -> Result<Vec<String>> {
+fn collect_api_responses() -> Result<Vec<String>> {
     #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct TweetFeed {
@@ -58,7 +60,7 @@ async fn collect_api_responses() -> Result<Vec<String>> {
 
     println!("calling this endpoint {endpoint:?}");
 
-    let response = call_api(twitter_client, endpoint).await?;
+    let response: String = call_api(twitter_client, endpoint)?;
 
     // println!("{response:?}");
 
@@ -79,9 +81,8 @@ async fn collect_api_responses() -> Result<Vec<String>> {
     Ok(feed)
 }
 
-#[tokio::main]
-pub async fn get_twitter_posts() {
-    let response = collect_api_responses().await.unwrap_or_else(|error| {
+pub fn get_twitter_posts() {
+    let response = collect_api_responses().unwrap_or_else(|error| {
         // exit to stderr
         eprintln!("Failed to collect tweets: {error}");
         process::exit(1)

@@ -1,12 +1,17 @@
+use anyhow::{bail, Result};
 use chrono::{prelude::*, Months};
 use core::panic;
 use reqwest::header::{HeaderMap, HeaderValue, RETRY_AFTER};
-use reqwest::{Client, Response, StatusCode};
+use reqwest::{Client, Response, StatusCode, Url};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::fs;
 use std::time::Duration;
+use std::{fs, process};
 use tokio::time::sleep;
+
+// local libraries
+use bodsky_archiver::call_api;
+
 const ACCOUNT_DID: &str = "bodleianlibraries.bsky.social";
 const POSTS_PER_REQUEST: usize = 85;
 
@@ -52,7 +57,8 @@ fn create_bodsky_client() -> Client {
         .expect("unable to create client")
 }
 
-fn get_posts_number(app_client: Client) -> usize {
+#[tokio::main]
+async fn get_posts_number(app_client: Client) -> Result<usize> {
     // This function gets the number of posts
     // posted by a given account 'did', from
     // an actor.getProfile api call
@@ -62,62 +68,19 @@ fn get_posts_number(app_client: Client) -> usize {
     pub struct Profile {
         posts_count: usize,
     }
-    #[tokio::main]
-    async fn request_profile_from_api(app_client: Client) -> Profile {
-        let mut retries: u8 = 0;
-        let mut backoff: Duration = Duration::from_secs(1);
 
-        let response_from_retry: Result<Response, reqwest::Error> = loop {
-            match app_client
-                .get("https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile")
-                .query(&[("actor", ACCOUNT_DID)])
-                .send()
-                .await
-                // if status is 429, back off and retry
-            {
-                Ok(resp) if resp.status().is_success() => break Ok(resp),
-                Ok(resp) if resp.status() == StatusCode::TOO_MANY_REQUESTS && retries < 6 => {
-                    sleep(backoff).await;
-                    retries += 1;
-                    backoff *= 2;
-                }
-                // get the retry-after header value, convert it
-                // to seconds, then to duration, etc.
-                Ok(resp) if resp.headers().contains_key("retry-after") && retries < 6 => {
-                    if let Some(retry_after) = resp.headers().get(RETRY_AFTER) {
-                        if let Ok(retry_after) = retry_after.to_str() {
-                            if let Ok(retry_after) = retry_after.parse::<u64>() {
-                                if retry_after < 128 {
-                                    backoff = Duration::from_secs(retry_after + 1);
-                                }
-                            }
-                        }
-                    }
-                    sleep(backoff).await;
-                    retries += 1;
-                    backoff *= 2;
-                }
-                Err(e) => break Err(e),
-                // Breaking out with an error is fine,
-                // the last match arm should never be met
-                _ => panic!("Failed to request profile from API"),
-            }
-        };
-        // first error handling on the response
-        let response: Response = match response_from_retry {
-            Ok(response) => response,
-            Err(network_error) => panic!("Failed to get API response: {network_error:?}"),
-        };
-        // parse the response into profile struct
-        let parsed_response: Profile = match response.json::<Profile>().await {
-            Ok(response) => response,
-            Err(parse_error) => panic!("Failed to parse API response: {parse_error:?}"),
-        };
-        parsed_response
-    }
+    let endpoint = Url::parse_with_params(
+        "https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile",
+        &[("actor", ACCOUNT_DID)],
+    )
+    .unwrap();
 
-    let profile: Profile = request_profile_from_api(app_client);
-    profile.posts_count
+    let response: String = call_api(app_client, endpoint)?;
+
+    // parse the response into tweet struct
+    let profile: Profile = serde_json::from_str(&response)?;
+
+    Ok(profile.posts_count)
 }
 
 fn collect_api_responses(
@@ -243,7 +206,12 @@ pub fn get_bluesky_posts() {
     let crawl_datetime: DateTime<Utc> = Utc::now().checked_sub_months(months_to_go_back).unwrap();
     let app_client: Client = create_bodsky_client();
 
-    let total_posts: usize = get_posts_number(app_client.clone());
+    let total_posts = get_posts_number(app_client.clone()).unwrap_or_else(|error| {
+        // exit to stderr
+        eprintln!("Failed to collect number of bluesky posts in account: {error}");
+        process::exit(1)
+    });
+
     println!("there are {} posts to request", total_posts);
     let feed_urls: Vec<String> = collect_api_responses(crawl_datetime, total_posts, &app_client);
     println!("collected {} posts", feed_urls.len());
