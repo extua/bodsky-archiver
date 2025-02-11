@@ -60,7 +60,7 @@ fn collect_api_responses() -> Result<Vec<String>> {
 
     println!("calling this endpoint {endpoint:?}");
 
-    let response: String = call_api(twitter_client, endpoint)?;
+    let response: String = call_api(&twitter_client, endpoint)?;
 
     // println!("{response:?}");
 
