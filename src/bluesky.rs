@@ -58,7 +58,7 @@ fn create_bodsky_client() -> Client {
 }
 
 #[tokio::main]
-async fn get_posts_number(app_client: Client) -> Result<usize> {
+async fn get_posts_number(app_client: &Client) -> Result<usize> {
     // This function gets the number of posts
     // posted by a given account 'did', from
     // an actor.getProfile api call
@@ -87,7 +87,14 @@ fn collect_api_responses(
     crawl_datetime: DateTime<Utc>,
     total_posts: usize,
     app_client: &Client,
-) -> Vec<String> {
+) -> Result<Vec<String>> {
+    #[derive(Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct AuthorFeed {
+        cursor: String,
+        feed: Vec<Value>,
+    }
+
     let posts_per_api_calls_needed: Vec<usize> =
         posts_per_api_calls_needed(total_posts, POSTS_PER_REQUEST);
     // This loop tracks the number of posts remaining
@@ -96,9 +103,24 @@ fn collect_api_responses(
     let mut feed: Vec<String> = Vec::with_capacity(total_posts);
 
     'outer: for posts_to_request in posts_per_api_calls_needed {
+
         println!("requesting {posts_to_request} posts");
-        let bulk_posts: AuthorFeed =
-            request_bulk_posts_from_api(posts_to_request, &cursor, app_client);
+
+        
+        let endpoint = Url::parse_with_params(
+            "https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile",
+            &[
+                ("actor", ACCOUNT_DID),
+                ("limit", &posts_to_request.to_string()),
+                ("cursor", &cursor),
+            ],
+        )
+        .unwrap();
+
+        let response: String = call_api(app_client, endpoint)?;
+
+        // parse the response into tweet struct
+        let bulk_posts: AuthorFeed = serde_json::from_str(&response)?;
 
         // update the cursor value
         cursor = bulk_posts.cursor;
@@ -124,79 +146,7 @@ fn collect_api_responses(
             feed.push(http_url);
         }
     }
-
-    #[derive(Serialize, Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    pub struct AuthorFeed {
-        cursor: String,
-        feed: Vec<Value>,
-    }
-
-    #[tokio::main]
-    async fn request_bulk_posts_from_api(
-        posts_to_request: usize,
-        cursor: &str,
-        app_client: &Client,
-    ) -> AuthorFeed {
-        let posts_per_request_str: String = posts_to_request.to_string();
-
-        let mut retries: u8 = 0;
-        let mut backoff: Duration = Duration::from_secs(1);
-
-        let response_from_retry: Result<Response, reqwest::Error> = loop {
-            match app_client
-                .get("https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed")
-                .query(&[
-                    ("actor", ACCOUNT_DID),
-                    ("limit", &posts_per_request_str),
-                    ("cursor", cursor),
-                ])
-                .send()
-                .await
-                // if status is 429, back off and retry
-            {
-                Ok(resp) if resp.status().is_success() => break Ok(resp),
-                Ok(resp) if resp.status() == StatusCode::TOO_MANY_REQUESTS && retries < 6 => {
-                    sleep(backoff).await;
-                    retries += 1;
-                    backoff *= 2;
-                }
-                // get the retry-after header value, convert it
-                // to seconds, then to duration, etc.
-                Ok(resp) if resp.headers().contains_key("retry-after") && retries < 6 => {
-                    if let Some(retry_after) = resp.headers().get(RETRY_AFTER) {
-                        if let Ok(retry_after) = retry_after.to_str() {
-                            if let Ok(retry_after) = retry_after.parse::<u64>() {
-                                if retry_after < 128 {
-                                    backoff = Duration::from_secs(retry_after + 1);
-                                }
-                            }
-                        }
-                    }
-                    sleep(backoff).await;
-                    retries += 1;
-                    backoff *= 2;
-                }
-                Err(e) => break Err(e),
-                // Breaking out with an error is fine,
-                // the last match arm should never be met
-                _ => panic!("Failed to request profile from API"),
-            }
-        };
-        // first error handling on the response
-        let response: Response = match response_from_retry {
-            Ok(response) => response,
-            Err(network_error) => panic!("Failed to get API response: {network_error:?}"),
-        };
-        // parse the response into profile struct
-        let parsed_response: AuthorFeed = match response.json::<AuthorFeed>().await {
-            Ok(response) => response,
-            Err(parse_error) => panic!("Failed to parse API response: {parse_error:?}"),
-        };
-        parsed_response
-    }
-
-    feed
+    Ok(feed)
 }
 
 // Everything orchestrated in this function
@@ -204,16 +154,24 @@ fn collect_api_responses(
 pub fn get_bluesky_posts() {
     let months_to_go_back: Months = Months::new(5);
     let crawl_datetime: DateTime<Utc> = Utc::now().checked_sub_months(months_to_go_back).unwrap();
+
     let app_client: Client = create_bodsky_client();
 
-    let total_posts = get_posts_number(app_client.clone()).unwrap_or_else(|error| {
+    let total_posts = get_posts_number(&app_client).unwrap_or_else(|error| {
         // exit to stderr
         eprintln!("Failed to collect number of bluesky posts in account: {error}");
         process::exit(1)
     });
 
     println!("there are {} posts to request", total_posts);
-    let feed_urls: Vec<String> = collect_api_responses(crawl_datetime, total_posts, &app_client);
+
+    let feed_urls =
+        collect_api_responses(crawl_datetime, total_posts, &app_client).unwrap_or_else(|error| {
+            // exit to stderr
+            eprintln!("Failed to collect bluesky posts: {error}");
+            process::exit(1)
+        });
+
     println!("collected {} posts", feed_urls.len());
 
     // Now write everything out to a file
