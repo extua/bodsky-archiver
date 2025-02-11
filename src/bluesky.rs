@@ -72,8 +72,7 @@ async fn get_posts_number(app_client: &Client) -> Result<usize> {
     let endpoint = Url::parse_with_params(
         "https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile",
         &[("actor", ACCOUNT_DID)],
-    )
-    .unwrap();
+    )?;
 
     let response: String = call_api(app_client, endpoint)?;
 
@@ -103,10 +102,8 @@ fn collect_api_responses(
     let mut feed: Vec<String> = Vec::with_capacity(total_posts);
 
     'outer: for posts_to_request in posts_per_api_calls_needed {
-
         println!("requesting {posts_to_request} posts");
 
-        
         let endpoint = Url::parse_with_params(
             "https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile",
             &[
@@ -114,8 +111,7 @@ fn collect_api_responses(
                 ("limit", &posts_to_request.to_string()),
                 ("cursor", &cursor),
             ],
-        )
-        .unwrap();
+        )?;
 
         let response: String = call_api(app_client, endpoint)?;
 

@@ -55,8 +55,7 @@ fn collect_api_responses() -> Result<Vec<String>> {
             ("max_results", "10"),
             ("tweet.fields", "created_at,id,note_tweet"),
         ],
-    )
-    .unwrap();
+    )?;
 
     println!("calling this endpoint {endpoint:?}");
 
