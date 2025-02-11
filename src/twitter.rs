@@ -47,7 +47,9 @@ fn collect_api_responses() -> Result<Vec<String>> {
         Ok(client) => client,
         Err(error) => panic!("Failed to create Twitter client: {error:?}"),
     };
-    println!("{:?}", twitter_client);
+
+    println!("{twitter_client:?}");
+
     let endpoint = Url::parse_with_params(
         "https://api.x.com/2/tweets/search/recent",
         &[
@@ -59,7 +61,7 @@ fn collect_api_responses() -> Result<Vec<String>> {
 
     println!("calling this endpoint {endpoint:?}");
 
-    let response: String = call_api(&twitter_client, endpoint)?;
+    let response: String = call_api(&twitter_client, &endpoint)?;
 
     // println!("{response:?}");
 
@@ -87,5 +89,5 @@ pub fn get_twitter_posts() {
         process::exit(1)
     });
 
-    println!("{:?}", response);
+    println!("{response:?}");
 }

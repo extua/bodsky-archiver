@@ -37,13 +37,13 @@ fn posts_per_api_calls_needed(total_posts: usize, posts_per_request: usize) -> V
         api_call_vec.push(total_posts);
     } else if last_request_remaining_posts == 0 {
         for _ in 0..api_calls_necessary {
-            api_call_vec.push(posts_per_request)
+            api_call_vec.push(posts_per_request);
         }
     } else {
         for _ in 0..(api_calls_necessary - 1) {
-            api_call_vec.push(posts_per_request)
+            api_call_vec.push(posts_per_request);
         }
-        api_call_vec.push(last_request_remaining_posts)
+        api_call_vec.push(last_request_remaining_posts);
     }
     api_call_vec
 }
@@ -74,7 +74,7 @@ async fn get_posts_number(app_client: &Client) -> Result<usize> {
         &[("actor", ACCOUNT_DID)],
     )?;
 
-    let response: String = call_api(app_client, endpoint)?;
+    let response: String = call_api(app_client, &endpoint)?;
 
     // parse the response into tweet struct
     let profile: Profile = serde_json::from_str(&response)?;
@@ -98,7 +98,7 @@ fn collect_api_responses(
         posts_per_api_calls_needed(total_posts, POSTS_PER_REQUEST);
     // This loop tracks the number of posts remaining
     // and the number to make in each api call
-    let mut cursor: String = "".to_string();
+    let mut cursor: String = String::new();
     let mut feed: Vec<String> = Vec::with_capacity(total_posts);
 
     'outer: for posts_to_request in posts_per_api_calls_needed {
@@ -113,7 +113,7 @@ fn collect_api_responses(
             ],
         )?;
 
-        let response: String = call_api(app_client, endpoint)?;
+        let response: String = call_api(app_client, &endpoint)?;
 
         // parse the response into tweet struct
         let bulk_posts: AuthorFeed = serde_json::from_str(&response)?;
@@ -122,8 +122,8 @@ fn collect_api_responses(
         cursor = bulk_posts.cursor;
 
         let cursor_rfc3399: DateTime<Utc> = DateTime::parse_from_rfc3339(&cursor).unwrap().to_utc();
-        println!("crawl datetime is {}", crawl_datetime);
-        println!("cursor is         {}", cursor_rfc3399);
+        println!("crawl datetime is {crawl_datetime}");
+        println!("cursor is         {cursor_rfc3399}");
 
         for post in bulk_posts.feed {
             let at_uri: &str = post["post"]["uri"].as_str().unwrap();
@@ -159,7 +159,7 @@ pub fn get_bluesky_posts() {
         process::exit(1)
     });
 
-    println!("there are {} posts to request", total_posts);
+    println!("there are {total_posts} posts to request");
 
     let feed_urls =
         collect_api_responses(crawl_datetime, total_posts, &app_client).unwrap_or_else(|error| {

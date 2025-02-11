@@ -4,7 +4,7 @@ use std::time::Duration;
 use tokio::time::sleep;
 
 #[tokio::main]
-pub async fn call_api(app_client: &Client, endpoint: Url) -> Result<String, reqwest::Error> {
+pub async fn call_api(app_client: &Client, endpoint: &Url) -> Result<String, reqwest::Error> {
     let mut retries: u8 = 0;
     let mut backoff: Duration = Duration::from_secs(1);
 
