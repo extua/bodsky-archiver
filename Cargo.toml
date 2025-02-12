@@ -3,7 +3,10 @@ name = "bodsky-archiver"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.84"
+license = "MIT"
 default-run = "bodsky-archiver"
+repository = "https://github.com/extua/bodsky-archiver"
+description = "Test project for archiving social media posts at the Bodleian Libraries."
 
 [dependencies]
 reqwest = { version = "0.12.12", features = [
