@@ -68,11 +68,13 @@ async fn get_posts_number(app_client: &Client) -> Result<usize> {
         posts_count: usize,
     }
 
+    // compose the url ro request
     let endpoint = Url::parse_with_params(
         "https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile",
         &[("actor", ACCOUNT_DID)],
     )?;
 
+    // make the request and get response body
     let response: String = call_api(app_client, &endpoint).await?;
 
     // parse the response into tweet struct
@@ -86,7 +88,7 @@ async fn collect_api_responses(
     total_posts: usize,
     app_client: &Client,
 ) -> Result<Vec<String>> {
-    #[derive(Serialize, Deserialize)]
+    #[derive(Serialize, Deserialize, Debug)]
     #[serde(rename_all = "camelCase")]
     pub struct AuthorFeed {
         cursor: String,
@@ -103,8 +105,9 @@ async fn collect_api_responses(
     'outer: for posts_to_request in posts_per_api_calls_needed {
         println!("requesting {posts_to_request} posts");
 
+        // compose the url ro request
         let endpoint = Url::parse_with_params(
-            "https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile",
+            "https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed",
             &[
                 ("actor", ACCOUNT_DID),
                 ("limit", &posts_to_request.to_string()),
@@ -112,6 +115,7 @@ async fn collect_api_responses(
             ],
         )?;
 
+        // make the request and get response body
         let response: String = call_api(app_client, &endpoint).await?;
 
         // parse the response into tweet struct
