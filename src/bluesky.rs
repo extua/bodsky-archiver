@@ -1,13 +1,9 @@
-use anyhow::{bail, Result};
+use anyhow::Result;
 use chrono::{prelude::*, Months};
-use core::panic;
-use reqwest::header::{HeaderMap, HeaderValue, RETRY_AFTER};
-use reqwest::{Client, Response, StatusCode, Url};
+use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::time::Duration;
 use std::{fs, process};
-use tokio::time::sleep;
 
 // local libraries
 use bodsky_archiver::call_api;
@@ -48,13 +44,13 @@ fn posts_per_api_calls_needed(total_posts: usize, posts_per_request: usize) -> V
     api_call_vec
 }
 
-fn create_bodsky_client() -> Client {
+fn create_bluesky_client() -> Result<Client> {
     const APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
-    reqwest::Client::builder()
+    let client = reqwest::Client::builder()
         .user_agent(APP_USER_AGENT)
         .gzip(true)
-        .build()
-        .expect("unable to create client")
+        .build()?;
+    Ok(client)
 }
 
 async fn get_posts_number(app_client: &Client) -> Result<usize> {
@@ -154,17 +150,23 @@ pub async fn get_bluesky_posts() {
     let months_to_go_back: Months = Months::new(5);
     let crawl_datetime: DateTime<Utc> = Utc::now().checked_sub_months(months_to_go_back).unwrap();
 
-    let app_client: Client = create_bodsky_client();
-
-    let total_posts = get_posts_number(&app_client).await.unwrap_or_else(|error| {
+    let bluesky_client: Client = create_bluesky_client().unwrap_or_else(|error| {
         // exit to stderr
-        eprintln!("Failed to collect number of bluesky posts in account: {error}");
+        eprintln!("Failed to create bluesky client: {error}");
         process::exit(1)
     });
 
+    let total_posts = get_posts_number(&bluesky_client)
+        .await
+        .unwrap_or_else(|error| {
+            // exit to stderr
+            eprintln!("Failed to collect number of bluesky posts in account: {error}");
+            process::exit(1)
+        });
+
     println!("there are {total_posts} posts to request");
 
-    let feed_urls = collect_api_responses(crawl_datetime, total_posts, &app_client)
+    let feed_urls = collect_api_responses(crawl_datetime, total_posts, &bluesky_client)
         .await
         .unwrap_or_else(|error| {
             // exit to stderr

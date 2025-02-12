@@ -1,39 +1,34 @@
-use anyhow::{bail, Result};
+use anyhow::Result;
 use reqwest::{
-    header::{self, RETRY_AFTER},
-    Client, Error, Response, StatusCode, Url,
+    header::{self},
+    Client, Url,
 };
-use serde::{de::Expected, Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{env, process};
 
 // local libraries
 use bodsky_archiver::call_api;
 
-struct TwitterClient(Client);
+fn create_twitter_client() -> Result<Client> {
+    const APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
+    let mut headers: header::HeaderMap = header::HeaderMap::new();
+    // Todo: proper error handling here
+    dotenvy::dotenv()?;
+    let bare_bearer_token: String = env::var("TWITTER_API_BEARER_TOKEN")?;
+    let mut prefixed_bearer_token: String = "Bearer ".to_string();
+    prefixed_bearer_token.push_str(&bare_bearer_token);
 
-impl TwitterClient {
-    fn new() -> Result<Client> {
-        const APP_USER_AGENT: &str =
-            concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
-        let mut headers: header::HeaderMap = header::HeaderMap::new();
-        // Todo: proper error handling here
-        dotenvy::dotenv()?;
-        let bare_bearer_token: String = env::var("TWITTER_API_BEARER_TOKEN")?;
-        let mut prefixed_bearer_token: String = "Bearer ".to_string();
-        prefixed_bearer_token.push_str(&bare_bearer_token);
-
-        headers.insert(
-            "Authorization",
-            header::HeaderValue::from_str(&prefixed_bearer_token)?,
-        );
-        let app_client = reqwest::Client::builder()
-            .user_agent(APP_USER_AGENT)
-            .default_headers(headers)
-            .gzip(true)
-            .build()?;
-        Ok(app_client)
-    }
+    headers.insert(
+        "Authorization",
+        header::HeaderValue::from_str(&prefixed_bearer_token)?,
+    );
+    let app_client = reqwest::Client::builder()
+        .user_agent(APP_USER_AGENT)
+        .default_headers(headers)
+        .gzip(true)
+        .build()?;
+    Ok(app_client)
 }
 
 async fn collect_api_responses() -> Result<Vec<String>> {
@@ -43,10 +38,11 @@ async fn collect_api_responses() -> Result<Vec<String>> {
         data: Vec<Value>,
     }
 
-    let twitter_client: Client = match TwitterClient::new() {
-        Ok(client) => client,
-        Err(error) => panic!("Failed to create Twitter client: {error:?}"),
-    };
+    let twitter_client: Client = create_twitter_client().unwrap_or_else(|error| {
+        // exit to stderr
+        eprintln!("Failed to create twitter client: {error}");
+        process::exit(1)
+    });
 
     println!("{twitter_client:?}");
 
