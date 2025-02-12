@@ -36,7 +36,7 @@ impl TwitterClient {
     }
 }
 
-fn collect_api_responses() -> Result<Vec<String>> {
+async fn collect_api_responses() -> Result<Vec<String>> {
     #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct TweetFeed {
@@ -61,7 +61,7 @@ fn collect_api_responses() -> Result<Vec<String>> {
 
     println!("calling this endpoint {endpoint:?}");
 
-    let response: String = call_api(&twitter_client, &endpoint)?;
+    let response: String = call_api(&twitter_client, &endpoint).await?;
 
     // println!("{response:?}");
 
@@ -82,8 +82,8 @@ fn collect_api_responses() -> Result<Vec<String>> {
     Ok(feed)
 }
 
-pub fn get_twitter_posts() {
-    let response = collect_api_responses().unwrap_or_else(|error| {
+pub async fn get_twitter_posts() {
+    let response = collect_api_responses().await.unwrap_or_else(|error| {
         // exit to stderr
         eprintln!("Failed to collect tweets: {error}");
         process::exit(1)

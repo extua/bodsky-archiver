@@ -57,7 +57,6 @@ fn create_bodsky_client() -> Client {
         .expect("unable to create client")
 }
 
-#[tokio::main]
 async fn get_posts_number(app_client: &Client) -> Result<usize> {
     // This function gets the number of posts
     // posted by a given account 'did', from
@@ -74,7 +73,7 @@ async fn get_posts_number(app_client: &Client) -> Result<usize> {
         &[("actor", ACCOUNT_DID)],
     )?;
 
-    let response: String = call_api(app_client, &endpoint)?;
+    let response: String = call_api(app_client, &endpoint).await?;
 
     // parse the response into tweet struct
     let profile: Profile = serde_json::from_str(&response)?;
@@ -82,7 +81,7 @@ async fn get_posts_number(app_client: &Client) -> Result<usize> {
     Ok(profile.posts_count)
 }
 
-fn collect_api_responses(
+async fn collect_api_responses(
     crawl_datetime: DateTime<Utc>,
     total_posts: usize,
     app_client: &Client,
@@ -113,7 +112,7 @@ fn collect_api_responses(
             ],
         )?;
 
-        let response: String = call_api(app_client, &endpoint)?;
+        let response: String = call_api(app_client, &endpoint).await?;
 
         // parse the response into tweet struct
         let bulk_posts: AuthorFeed = serde_json::from_str(&response)?;
@@ -147,13 +146,13 @@ fn collect_api_responses(
 
 // Everything orchestrated in this function
 // gets exported to main.rs
-pub fn get_bluesky_posts() {
+pub async fn get_bluesky_posts() {
     let months_to_go_back: Months = Months::new(5);
     let crawl_datetime: DateTime<Utc> = Utc::now().checked_sub_months(months_to_go_back).unwrap();
 
     let app_client: Client = create_bodsky_client();
 
-    let total_posts = get_posts_number(&app_client).unwrap_or_else(|error| {
+    let total_posts = get_posts_number(&app_client).await.unwrap_or_else(|error| {
         // exit to stderr
         eprintln!("Failed to collect number of bluesky posts in account: {error}");
         process::exit(1)
@@ -161,8 +160,9 @@ pub fn get_bluesky_posts() {
 
     println!("there are {total_posts} posts to request");
 
-    let feed_urls =
-        collect_api_responses(crawl_datetime, total_posts, &app_client).unwrap_or_else(|error| {
+    let feed_urls = collect_api_responses(crawl_datetime, total_posts, &app_client)
+        .await
+        .unwrap_or_else(|error| {
             // exit to stderr
             eprintln!("Failed to collect bluesky posts: {error}");
             process::exit(1)
