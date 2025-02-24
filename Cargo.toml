@@ -23,3 +23,9 @@ anyhow = "1.0.95"
 
 [dev-dependencies]
 httpmock = "0.7.0"
+
+[profile.release]
+# magic incantations to produce speedier release builds
+strip = "symbols"
+lto = true
+codegen-units = 1
