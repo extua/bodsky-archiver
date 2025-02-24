@@ -59,8 +59,6 @@ async fn collect_api_responses() -> Result<Vec<String>> {
 
     let response: String = call_api(&twitter_client, &endpoint).await?;
 
-    // println!("{response:?}");
-
     // parse the response into tweet struct
     let bulk_posts: TweetFeed = serde_json::from_str(&response)?;
 

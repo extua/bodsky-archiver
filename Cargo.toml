@@ -1,8 +1,8 @@
 [package]
 name = "bodsky-archiver"
 version = "0.1.0"
-edition = "2021"
-rust-version = "1.84"
+edition = "2024"
+rust-version = "1.85"
 license = "MIT"
 authors = ["Pierre Marshall <pierre.marshall@bodleian.ox.ac.uk>"]
 repository = "https://github.com/extua/bodsky-archiver"
