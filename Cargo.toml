@@ -9,7 +9,7 @@ repository = "https://github.com/extua/bodsky-archiver"
 description = "Test project for archiving social media posts at the Bodleian Libraries."
 
 [dependencies]
-reqwest = { version = "0.12.15", features = [
+reqwest = { version = "0.12.18", features = [
     "json",
     "rustls-tls",
     "gzip",
