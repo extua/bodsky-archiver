@@ -5,6 +5,11 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    groups:
+      minor-bumps:
+        update-types:
+        - "minor"
+        - "patch"
       
   # Version updates for GitHub Actions
   - package-ecosystem: "github-actions"
