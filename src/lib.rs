@@ -1,6 +1,7 @@
 use anyhow::Result;
 use reqwest::{header::RETRY_AFTER, Client, Error, Response, StatusCode, Url};
 use std::time::Duration;
+// tokio sleep is non-blocking so yields the thread while waiting
 use tokio::time::sleep;
 
 pub async fn call_api(app_client: &Client, endpoint: &Url) -> Result<String, reqwest::Error> {
