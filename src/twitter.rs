@@ -1,7 +1,7 @@
 use anyhow::Result;
 use reqwest::{
-    header::{self},
     Client, Url,
+    header::{self},
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
