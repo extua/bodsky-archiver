@@ -2,7 +2,7 @@
 name = "bodsky-archiver"
 version = "0.1.0"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.88"
 license = "MIT"
 authors = ["Pierre Marshall <pierre.marshall@bodleian.ox.ac.uk>"]
 repository = "https://github.com/extua/bodsky-archiver"

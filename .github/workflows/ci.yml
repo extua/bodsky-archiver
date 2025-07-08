@@ -23,8 +23,8 @@ jobs:
       
       - name: Setup Rust
         run: |
-          rustup toolchain install 1.85 --profile minimal --no-self-update
-          rustup default 1.85
+          rustup toolchain install 1.88 --profile minimal --no-self-update
+          rustup default 1.88
         
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
@@ -40,8 +40,8 @@ jobs:
       
       - name: Setup Rust
         run: |
-          rustup toolchain install 1.85 --profile minimal --no-self-update
-          rustup default 1.85
+          rustup toolchain install 1.88 --profile minimal --no-self-update
+          rustup default 1.88
         
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
