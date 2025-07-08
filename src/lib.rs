@@ -33,18 +33,14 @@ pub async fn call_api(app_client: &Client, endpoint: &Url) -> Result<String, req
             Ok(resp)
                 if resp.headers().contains_key("retry-after") && retries < RETRY_SCALE.len() =>
             {
-                if let Some(retry_after) = resp.headers().get(RETRY_AFTER) {
-                    if let Ok(retry_after) = retry_after.to_str() {
-                        if let Ok(retry_after) = retry_after.parse::<u64>() {
-                            if retry_after < 233 {
-                                let backoff = Duration::from_secs(retry_after + 1);
-                                println!(
-                                    "Got a retry-after response, sleeping {backoff:?} seconds"
-                                );
-                                sleep(backoff).await;
-                            }
-                        }
-                    }
+                if let Some(retry_after) = resp.headers().get(RETRY_AFTER)
+                    && let Ok(retry_after) = retry_after.to_str()
+                    && let Ok(retry_after) = retry_after.parse::<u64>()
+                    && retry_after < 233
+                {
+                    let backoff = Duration::from_secs(retry_after + 1);
+                    println!("Got a retry-after response, sleeping {backoff:?} seconds");
+                    sleep(backoff).await;
                 }
                 retries += 1;
             }
