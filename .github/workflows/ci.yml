@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout directory
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       
       - name: Setup Rust
         run: |
@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout directory
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       
       - name: Setup Rust
         run: |
