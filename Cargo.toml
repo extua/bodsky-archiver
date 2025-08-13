@@ -9,7 +9,7 @@ repository = "https://github.com/extua/bodsky-archiver"
 description = "Test project for archiving social media posts at the Bodleian Libraries."
 
 [dependencies]
-reqwest = { version = "0.12.18", features = [
+reqwest = { version = "0.12.23", features = [
     "json",
     "rustls-tls",
     "gzip",
@@ -19,7 +19,7 @@ serde_json = "1.0.142"
 serde = { version = "1.0.219", features = ["derive"] }
 chrono = "0.4.41"
 dotenvy = "0.15"
-anyhow = "1.0.98"
+anyhow = "1.0.99"
 
 [dev-dependencies]
 httpmock = "0.7.0"
